@@ -10,7 +10,7 @@ class PIDController:
         max_integral : windup clamp on the integral accumulator. Default 500
     """
 
-    def __init__(self, Kp, Ki, Kd, alpha=0.2, max_integral=500):
+    def __init__(self, Kp, Ki, Kd, alpha=0.5, max_integral=500):
         self.Kp = Kp
         self.Ki = Ki
         self.Kd = Kd

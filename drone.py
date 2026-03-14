@@ -8,9 +8,6 @@ which will lead to increased drift
 """
 # pylint: disable=no-member
 
-
-
-
 import select
 import socket
 
