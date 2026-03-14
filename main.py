@@ -17,15 +17,18 @@ def main():
         print(f"ERROR: {e}")
         return
 
-    FRAME_WIDTH  = int(cam_front.get(cv2.CAP_PROP_FRAME_WIDTH))
-    FRAME_HEIGHT = int(cam_front.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    FRONT_WIDTH  = int(cam_front.get(cv2.CAP_PROP_FRAME_WIDTH))
+    FRONT_HEIGHT = int(cam_front.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    SIDE_WIDTH   = int(cam_side.get(cv2.CAP_PROP_FRAME_WIDTH))
+    SIDE_HEIGHT  = int(cam_side.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    TARGET_ROLL_X   = FRAME_WIDTH  // 2
-    TARGET_PITCH_Y  = FRAME_WIDTH  // 2
-    TARGET_ALTITUDE = FRAME_HEIGHT // 2
+    TARGET_ROLL_X   = FRONT_WIDTH  // 2
+    TARGET_PITCH_X  = SIDE_WIDTH   // 2
+    TARGET_ALTITUDE = FRONT_HEIGHT // 2
 
-    print(f"Frame size   : {FRAME_WIDTH} x {FRAME_HEIGHT}")
-    print(f"Target center: X={TARGET_ROLL_X}, Y={TARGET_PITCH_Y}, Alt={TARGET_ALTITUDE}")
+    print(f"Front frame  : {FRONT_WIDTH} x {FRONT_HEIGHT}")
+    print(f"Side  frame  : {SIDE_WIDTH} x {SIDE_HEIGHT}")
+    print(f"Target center: Roll_X={TARGET_ROLL_X}, Pitch_X={TARGET_PITCH_X}, Alt={TARGET_ALTITUDE}")
 
     # --- Drone startup ---
     drone.green_LED(1)
@@ -41,7 +44,7 @@ def main():
 
     # initialise error variables so debug overlay never crashes on first frame
     error_roll_x   = 0
-    error_pitch_y  = 0
+    error_pitch_x  = 0
     error_altitude = 0
 
     try:
@@ -76,13 +79,13 @@ def main():
 
                 # compute errors for display
                 error_roll_x   = TARGET_ROLL_X   - front_x
-                error_pitch_y  = TARGET_PITCH_Y  - side_x
+                error_pitch_x  = TARGET_PITCH_X  - side_x
                 error_altitude = TARGET_ALTITUDE  - front_y
 
                 # send control commands (dt handled internally by PID)
                 controller.run_control(
                     front_x, front_y, side_x,
-                    TARGET_ROLL_X, TARGET_PITCH_Y, TARGET_ALTITUDE
+                    TARGET_ROLL_X, TARGET_PITCH_X, TARGET_ALTITUDE
                 )
 
             # --- Debug overlay: front camera ---
@@ -91,8 +94,8 @@ def main():
             if prev_front_pos is not None:
                 cv2.circle(frame_front, (front_x, front_y), 10, (0, 0, 255), -1)
                 pt1 = (max(0, front_x - SEARCH_RADIUS), max(0, front_y - SEARCH_RADIUS))
-                pt2 = (min(FRAME_WIDTH,  front_x + SEARCH_RADIUS),
-                       min(FRAME_HEIGHT, front_y + SEARCH_RADIUS))
+                pt2 = (min(FRONT_WIDTH,  front_x + SEARCH_RADIUS),
+                       min(FRONT_HEIGHT, front_y + SEARCH_RADIUS))
                 cv2.rectangle(frame_front, pt1, pt2, (0, 255, 0), 2)
             cv2.putText(frame_front, f"Altitude Err: {error_altitude}",
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
@@ -100,15 +103,15 @@ def main():
                         (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
             # --- Debug overlay: side camera ---
-            cv2.drawMarker(frame_side, (TARGET_PITCH_Y, TARGET_ALTITUDE),
+            cv2.drawMarker(frame_side, (TARGET_PITCH_X, TARGET_ALTITUDE),
                            (0, 255, 255), cv2.MARKER_CROSS, 20, 2)
             if prev_side_pos is not None:
                 cv2.circle(frame_side, (side_x, side_y), 10, (255, 0, 0), -1)
                 pt1 = (max(0, side_x - SEARCH_RADIUS), max(0, side_y - SEARCH_RADIUS))
-                pt2 = (min(FRAME_WIDTH,  side_x + SEARCH_RADIUS),
-                       min(FRAME_HEIGHT, side_y + SEARCH_RADIUS))
+                pt2 = (min(SIDE_WIDTH,  side_x + SEARCH_RADIUS),
+                       min(SIDE_HEIGHT, side_y + SEARCH_RADIUS))
                 cv2.rectangle(frame_side, pt1, pt2, (0, 255, 0), 2)
-            cv2.putText(frame_side, f"Pitch Err: {error_pitch_y}",
+            cv2.putText(frame_side, f"Pitch Err: {error_pitch_x}",
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
             cv2.imshow("Front Camera (Roll & Altitude)", frame_front)

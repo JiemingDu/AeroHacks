@@ -20,7 +20,7 @@ MIN_THROTTLE  = 0
 # TUNE: start very small (0.01–0.05) to avoid aggressive tilts.
 PIXEL_TO_ANGLE = 0.03
 
-pid_altitude = PID(kp=0.05, ki=0.0, kd=0.01)
+pid_altitude = PID(Kp=0.05, Ki=0.0, Kd=0.01)
 last_control_time = None
 
 

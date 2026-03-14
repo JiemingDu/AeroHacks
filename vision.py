@@ -71,6 +71,8 @@ def get_drone_pixel_position(frame, prev_pos=None, search_radius=None):
         x2 = min(w, px + search_radius)
         y2 = min(h, py + search_radius)
         roi = frame[y1:y2, x1:x2]
+        if roi.size == 0:
+            return None, None
     else:
         x1, y1 = 0, 0
         roi = frame
