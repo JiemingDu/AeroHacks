@@ -4,10 +4,13 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("192.168.4.1", 8080))
 
 def msg(tx):
-    s.sendall((tx + "\n").encode("ASCII"))
+    s.sendall((tx + "\n").encode("ascii"))
     rx = ""
     while not rx.endswith("\n"):
-        rx += s.recv(1).decode("ASCII")
+        chunk = s.recv(1)
+        if not chunk:
+            raise ConnectionError("Socket closed by drone")
+        rx += chunk.decode("ascii")
     return rx[:-1]
 
 
@@ -29,11 +32,11 @@ def get_mode():
 # always between 0 and 250
 # in mode 2 sets baseline value in PID results are added to
 def manual_thrusts(A, B, C, D):
-    msg("manT\n" + str(A) + "," + str(B) + "," + str(C) + "," + str(D) + "\n")
+    msg("manT " + str(A) + "," + str(B) + "," + str(C) + "," + str(D))
 
 # same as prev function, but increments last value instead of overwriting
 def increment_thrusts(A, B, C, D):
-    msg("incT\n" + str(A) + "," + str(B) + "," + str(C) + "," + str(D) + "\n")
+    msg("incT " + str(A) + "," + str(B) + "," + str(C) + "," + str(D))
 
 def get_pitch(): # unit close-ish to degrees, but not exact
     return float(msg("angX")) / 16
