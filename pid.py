@@ -21,7 +21,7 @@ class PIDController:
         self.prev_error = 0.0
         self.filtered_derivative = 0.0
 
-    def compute(self, target, current, dt):
+    def compute(self, target, current, dt, measured_rate=None):
         """
         Compute PID output.
 
@@ -29,6 +29,10 @@ class PIDController:
             target  : desired value (commanded variable)
             current : measured value (controlled variable)
             dt      : time since last call in seconds
+            measured_rate : optional d(current)/dt from a physical sensor
+                           (e.g. gyroscope). When provided, the derivative
+                           term uses this instead of differentiating pixel
+                           error, giving cleaner damping.
 
         Returns:
             float: control output
@@ -46,8 +50,12 @@ class PIDController:
         self.integral = max(-self.max_integral, min(self.max_integral, self.integral))
         i_out = self.Ki * self.integral
 
-        # derivative with low-pass filter to suppress pixel jitter
-        raw_derivative = (error - self.prev_error) / dt
+        # derivative with low-pass filter
+        if measured_rate is not None:
+            # d(error)/dt = -d(current)/dt when target is ~constant
+            raw_derivative = -measured_rate
+        else:
+            raw_derivative = (error - self.prev_error) / dt
         self.filtered_derivative = (self.alpha * raw_derivative +
                                     (1 - self.alpha) * self.filtered_derivative)
         d_out = self.Kd * self.filtered_derivative
