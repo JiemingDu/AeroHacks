@@ -6,11 +6,12 @@ do not have constant high-bandwidth communications with the drone,
 because processing time doing wifi stuff is processing time not spent updating the gyroscope,
 which will lead to increased drift
 """
+# pylint: disable=no-member
 
 
 
 
-
+import select
 import socket
 
 
