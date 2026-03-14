@@ -1,16 +1,37 @@
+"""
+The following functions can be used to communicate with the drone
+
+general advice:
+do not have constant high-bandwidth communications with the drone,
+because processing time doing wifi stuff is processing time not spent updating the gyroscope,
+which will lead to increased drift
+"""
+# pylint: disable=no-member
+
+
+
+
+import select
 import socket
+
+
+def empty_socket(sock):
+    input_ready, _, _ = select.select([sock], [], [], 0.0)
+    while input_ready:
+        data = sock.recv(1)
+        if not data:
+            break
+        input_ready, _, _ = select.select([sock], [], [], 0.0)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("192.168.4.1", 8080))
 
 def msg(tx):
-    s.sendall((tx + "\n").encode("ascii"))
+    empty_socket(s)
+    s.sendall((tx + "\n").encode("ASCII"))
     rx = ""
     while not rx.endswith("\n"):
-        chunk = s.recv(1)
-        if not chunk:
-            raise ConnectionError("Socket closed by drone")
-        rx += chunk.decode("ascii")
+        rx += s.recv(1).decode("ASCII")
     return rx[:-1]
 
 
@@ -32,11 +53,11 @@ def get_mode():
 # always between 0 and 250
 # in mode 2 sets baseline value in PID results are added to
 def manual_thrusts(A, B, C, D):
-    msg("manT " + str(A) + "," + str(B) + "," + str(C) + "," + str(D))
+    msg("manT\n" + str(A) + "," + str(B) + "," + str(C) + "," + str(D) + "\n")
 
 # same as prev function, but increments last value instead of overwriting
 def increment_thrusts(A, B, C, D):
-    msg("incT " + str(A) + "," + str(B) + "," + str(C) + "," + str(D))
+    msg("incT\n" + str(A) + "," + str(B) + "," + str(C) + "," + str(D) + "\n")
 
 def get_pitch(): # unit close-ish to degrees, but not exact
     return float(msg("angX")) / 16
@@ -89,6 +110,25 @@ def get_i_values():
 def set_yaw(y): # directly sets motor difference for yaw control
     msg("yaw" + str(y))
 
+def get_firmware_version():
+    return msg("vers")
 
 
+
+
+
+
+
+
+# the following functions only work if firmware 1.2 or higher is installed on the drone
+# if you want to use this, please make sure by running msg("vers")
+
+# use at start of code if you want to use the drone outside of the cage. Overrides all mode changes
+def lock_props():
+    msg("lck")
+
+# recalibrates the gyroscope.
+# Do not communicate with the drone for 15 seconds after calling this
+def recalibrate():
+    msg("rst")
 
