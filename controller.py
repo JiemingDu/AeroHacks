@@ -57,18 +57,13 @@ def run_control(front_x, front_y, side_x,
     """
     global last_control_time
     now = time.perf_counter()
-    dt = 0.02 if last_control_time is None else (now - last_control_time)
+    dt = 0.02 if last_control_time is None else min(now - last_control_time, 0.1)
     last_control_time = now
-
-    # --- Read physical sensors (two WiFi round-trips) ---
-    gyro_roll_rate  = drone.get_gyro_roll()
-    gyro_pitch_rate = drone.get_gyro_pitch()
 
     # --- Roll (left/right from front camera) ---
     if front_x is not None:
         desired_roll = (target_roll_x - front_x) * PIXEL_TO_ANGLE
-        roll_cmd = pid_roll.compute(desired_roll, 0.0, dt,
-                                    measured_rate=gyro_roll_rate)
+        roll_cmd = pid_roll.compute(desired_roll, 0.0, dt)
         roll_cmd = max(-MAX_ANGLE, min(MAX_ANGLE, roll_cmd))
         drone.set_roll(roll_cmd)
     else:
@@ -78,8 +73,7 @@ def run_control(front_x, front_y, side_x,
     # --- Pitch (front/back from side camera) ---
     if side_x is not None:
         desired_pitch = (target_pitch_x - side_x) * PIXEL_TO_ANGLE
-        pitch_cmd = pid_pitch.compute(desired_pitch, 0.0, dt,
-                                      measured_rate=gyro_pitch_rate)
+        pitch_cmd = pid_pitch.compute(desired_pitch, 0.0, dt)
         pitch_cmd = max(-MAX_ANGLE, min(MAX_ANGLE, pitch_cmd))
         drone.set_pitch(pitch_cmd)
     else:

@@ -94,8 +94,8 @@ def get_drone_pixel_position(frame, prev_pos=None, search_radius=100):
 # ==========================================
 def open_cameras(front_index=1, side_index=2):
     """Open front and side USB cameras, returning (cam_front, cam_side)."""
-    cam_front = cv2.VideoCapture(front_index)
-    cam_side = cv2.VideoCapture(side_index)
+    cam_front = cv2.VideoCapture(1)
+    cam_side = cv2.VideoCapture(2)
 
     if not cam_front.isOpened():
         raise RuntimeError(f"Front camera (index {front_index}) failed to open")

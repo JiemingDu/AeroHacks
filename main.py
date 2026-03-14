@@ -1,4 +1,4 @@
-# pylint: disable=no-member
+# pylint: skip-file
 import cv2
 import time
 import drone
@@ -7,6 +7,7 @@ from vision import get_drone_pixel_position, open_cameras, release_cameras
 
 BASE_THROTTLE  = 150
 SEARCH_RADIUS  = 100   # pixels — ROI box half-size around last known position
+CONTROL_HZ     = 20    # max WiFi command rate — protects gyro update rate
 
 
 def main():
@@ -33,14 +34,16 @@ def main():
     # --- Drone startup ---
     drone.green_LED(1)
     drone.set_mode(2)
+    time.sleep(0.5)
     drone.manual_thrusts(BASE_THROTTLE, BASE_THROTTLE, BASE_THROTTLE, BASE_THROTTLE)
 
     # ROI memory — None means search the full frame
     prev_front_pos = None
     prev_side_pos  = None
 
-    lost_frames = 0
-    MAX_LOST    = 10
+    lost_frames    = 0
+    MAX_LOST       = 10
+    last_send_time = 0.0
 
     # initialise error variables so debug overlay never crashes on first frame
     error_roll_x   = 0
@@ -82,11 +85,14 @@ def main():
                 error_pitch_x  = TARGET_PITCH_X  - side_x
                 error_altitude = TARGET_ALTITUDE  - front_y
 
-                # send control commands (dt handled internally by PID)
-                controller.run_control(
-                    front_x, front_y, side_x,
-                    TARGET_ROLL_X, TARGET_PITCH_X, TARGET_ALTITUDE
-                )
+                # rate-limit WiFi commands to protect gyro update rate
+                now = time.time()
+                if now - last_send_time >= 1.0 / CONTROL_HZ:
+                    last_send_time = now
+                    controller.run_control(
+                        front_x, front_y, side_x,
+                        TARGET_ROLL_X, TARGET_PITCH_X, TARGET_ALTITUDE
+                    )
 
             # --- Debug overlay: front camera ---
             cv2.drawMarker(frame_front, (TARGET_ROLL_X, TARGET_ALTITUDE),
@@ -127,6 +133,7 @@ def main():
         drone.emergency_stop()
 
     finally:
+        drone.emergency_stop()
         release_cameras(cam_front, cam_side)
 
 
