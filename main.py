@@ -1,6 +1,6 @@
+# pylint: disable=no-member
 import cv2
 import time
-
 import drone
 import controller
 from vision import get_drone_pixel_position, open_cameras, release_cameras
